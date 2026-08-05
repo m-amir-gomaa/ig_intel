@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# instaScript launcher — POSIX (Linux/macOS). Runs the project venv.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# NixOS only: pip-built wheels (PyAV/ctranslate2/onnxruntime) link against
+# glibc-family libs absent from the default loader path. Detect + set.
+# (/etc/NixOS is unreliable as a marker; the nix store dir is definitive.)
+if [ -d /nix/store ]; then
+  # shellcheck source=bin/nixlibs.sh
+  source "$ROOT/bin/nixlibs.sh"
+  export_instainfo_ld_library_path
+  # xet CDN can be slow/unreliable here; standard HTTPS is fine.
+  export HF_HUB_DISABLE_XET=1
+fi
+
+# Make the package importable from any cwd.
+export PYTHONPATH="$ROOT"${PYTHONPATH:+:$PYTHONPATH}
+exec "$ROOT/.venv/bin/python" -m instascript "$@"

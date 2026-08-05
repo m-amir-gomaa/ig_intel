@@ -1,0 +1,270 @@
+{
+  "utcp_version": "1.0",
+  "tools": [
+    {
+      "name": "ig_process_queue",
+      "description": "Fire the batch extraction through Claude Code: processes every pending '- [ ]' link in Inbox/queue.md into Inbox/ (queue lines deleted once transcripts are verified), then reports.",
+      "tags": [
+        "igintel",
+        "vault",
+        "queue",
+        "extraction",
+        "ingest"
+      ],
+      "inputs": {
+        "type": "object",
+        "properties": {}
+      },
+      "tool_call_template": {
+        "call_template_type": "cli",
+        "commands": [
+          {
+            "command": "claude -p \"Process the batch queue for this ig_intel vault. First read .ai/WORKFLOW.md and follow it. Run: instascript --queue — this extracts every pending '- [ ]' link in Inbox/queue.md into Inbox/ and deletes each line once its transcript is verified. Be conservative: transcripts are ground truth, never altered. End with a concise report: what was ingested, what failed, what remains pending.\" --dangerously-skip-permissions --mcp-config {{UTCP_DIR}}/igintel-mcp.json",
+            "append_to_final_output": true
+          }
+        ],
+        "working_dir": "{{IG_INTEL_VAULT}}",
+        "inherit_env_vars": [
+          "PATH",
+          "HOME",
+          "ANTHROPIC_API_KEY",
+          "ANTHROPIC_AUTH_TOKEN",
+          "ANTHROPIC_BASE_URL",
+          "ANTHROPIC_MODEL",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+          "HF_HUB_DISABLE_XET",
+          "IG_INTEL_VAULT",
+          "DEEPSEEK_API_KEY"
+        ]
+      }
+    },
+    {
+      "name": "ig_ingest",
+      "description": "Ingest a single source (Instagram reel URL or local file) through Claude Code: extracts its transcript into Inbox/, then reports.",
+      "tags": [
+        "igintel",
+        "vault",
+        "ingest",
+        "extraction"
+      ],
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Instagram reel URL or local audio/video file path."
+          }
+        },
+        "required": [
+          "source"
+        ]
+      },
+      "tool_call_template": {
+        "call_template_type": "cli",
+        "commands": [
+          {
+            "command": "claude -p \"Ingest this source into the ig_intel vault: UTCP_ARG_source_UTCP_END. First read .ai/WORKFLOW.md. Run: instascript 'UTCP_ARG_source_UTCP_END' — this extracts the transcript into Inbox/. Be conservative: transcript is ground truth. End with a concise report.\" --dangerously-skip-permissions --mcp-config {{UTCP_DIR}}/igintel-mcp.json",
+            "append_to_final_output": true
+          }
+        ],
+        "working_dir": "{{IG_INTEL_VAULT}}",
+        "inherit_env_vars": [
+          "PATH",
+          "HOME",
+          "ANTHROPIC_API_KEY",
+          "ANTHROPIC_AUTH_TOKEN",
+          "ANTHROPIC_BASE_URL",
+          "ANTHROPIC_MODEL",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+          "HF_HUB_DISABLE_XET",
+          "IG_INTEL_VAULT",
+          "DEEPSEEK_API_KEY"
+        ]
+      }
+    },
+    {
+      "name": "ig_review",
+      "description": "DeepSeek summary + factual flags on an already-extracted item (no re-transcription). Then optionally organize it per the vault workflow.",
+      "tags": [
+        "igintel",
+        "vault",
+        "review",
+        "deepseek",
+        "flags"
+      ],
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Item slug or path (in Inbox/ or a management class)."
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      },
+      "tool_call_template": {
+        "call_template_type": "cli",
+        "commands": [
+          {
+            "command": "claude -p \"Review this item in the ig_intel vault: UTCP_ARG_slug_UTCP_END. First read .ai/WORKFLOW.md. Run: instascript --review-item 'UTCP_ARG_slug_UTCP_END' — this writes summary.md and flags.md (DeepSeek). Then, per the workflow, organize the item into a management class, write/update its note, link it, and verify the flagged claims where warranted. Be conservative; transcripts are never altered. End with a concise report.\" --dangerously-skip-permissions --mcp-config {{UTCP_DIR}}/igintel-mcp.json",
+            "append_to_final_output": true
+          }
+        ],
+        "working_dir": "{{IG_INTEL_VAULT}}",
+        "inherit_env_vars": [
+          "PATH",
+          "HOME",
+          "ANTHROPIC_API_KEY",
+          "ANTHROPIC_AUTH_TOKEN",
+          "ANTHROPIC_BASE_URL",
+          "ANTHROPIC_MODEL",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+          "HF_HUB_DISABLE_XET",
+          "IG_INTEL_VAULT",
+          "DEEPSEEK_API_KEY"
+        ]
+      }
+    },
+    {
+      "name": "ig_organize_inbox",
+      "description": "Organize all pending Inbox items into management classes per the vault workflow: move, write item notes, link to related notes and Classes/*.md.",
+      "tags": [
+        "igintel",
+        "vault",
+        "organize",
+        "classes"
+      ],
+      "inputs": {
+        "type": "object",
+        "properties": {}
+      },
+      "tool_call_template": {
+        "call_template_type": "cli",
+        "commands": [
+          {
+            "command": "claude -p \"Organize the Inbox of this ig_intel vault. First read .ai/WORKFLOW.md and .ai/KNOWLEDGE_MODEL.md, then follow them: for each item in Inbox/, decide its management class, move it, write its item note, link to related notes and Classes/*.md, update class notes. Be conservative: no bloat, transcripts never altered, link only to real notes. End with a concise report.\" --dangerously-skip-permissions --mcp-config {{UTCP_DIR}}/igintel-mcp.json",
+            "append_to_final_output": true
+          }
+        ],
+        "working_dir": "{{IG_INTEL_VAULT}}",
+        "inherit_env_vars": [
+          "PATH",
+          "HOME",
+          "ANTHROPIC_API_KEY",
+          "ANTHROPIC_AUTH_TOKEN",
+          "ANTHROPIC_BASE_URL",
+          "ANTHROPIC_MODEL",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+          "HF_HUB_DISABLE_XET",
+          "IG_INTEL_VAULT",
+          "DEEPSEEK_API_KEY"
+        ]
+      }
+    },
+    {
+      "name": "ig_vault_task",
+      "description": "Run an arbitrary vault task through Claude Code (DeepSeek): study, research, connect, fact-check, answer a question from the knowledge base, etc.",
+      "tags": [
+        "igintel",
+        "vault",
+        "task",
+        "research",
+        "study"
+      ],
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "Natural-language task: study a subject, connect concepts, fact-check a claim, answer using the vault, etc."
+          }
+        },
+        "required": [
+          "task"
+        ]
+      },
+      "tool_call_template": {
+        "call_template_type": "cli",
+        "commands": [
+          {
+            "command": "claude -p \"ig_intel vault task: UTCP_ARG_task_UTCP_END. First read .ai/CLAUDE.md, .ai/WORKFLOW.md, .ai/PREFERENCES.md. Search the vault first, retrieve relevant notes, use them to personalize your answer, identify gaps, and research externally only when needed. Distinguish existing knowledge from new research. Update the knowledge base when appropriate (conservatively). End with a clear, terse report.\" --dangerously-skip-permissions --mcp-config {{UTCP_DIR}}/igintel-mcp.json",
+            "append_to_final_output": true
+          }
+        ],
+        "working_dir": "{{IG_INTEL_VAULT}}",
+        "inherit_env_vars": [
+          "PATH",
+          "HOME",
+          "ANTHROPIC_API_KEY",
+          "ANTHROPIC_AUTH_TOKEN",
+          "ANTHROPIC_BASE_URL",
+          "ANTHROPIC_MODEL",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+          "HF_HUB_DISABLE_XET",
+          "IG_INTEL_VAULT",
+          "DEEPSEEK_API_KEY"
+        ]
+      }
+    },
+    {
+      "name": "ig_research",
+      "description": "Provenance-tagged web research on a claim/topic from the vault, via headless Claude Code: verifies against primary sources and writes the findings into the relevant note.",
+      "tags": [
+        "igintel",
+        "vault",
+        "research",
+        "rag",
+        "web",
+        "factcheck"
+      ],
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "description": "Claim, question, or topic to research (slug to verify, or a free-form question)."
+          }
+        },
+        "required": [
+          "topic"
+        ]
+      },
+      "tool_call_template": {
+        "call_template_type": "cli",
+        "commands": [
+          {
+            "command": "claude -p \"ig_intel research task: UTCP_ARG_topic_UTCP_END. Read .ai/WORKFLOW.md and .ai/PREFERENCES.md first. Search the vault for the relevant note/claim, then do LIVE web research against primary sources (papers, official docs, reputable institutions). Update the note with a Research/Verification section: findings, named sources with URLs, confidence, open questions. Distinguish source-claim vs research vs inference. Be terse. End with a concise report.\" --dangerously-skip-permissions --mcp-config {{UTCP_DIR}}/igintel-mcp.json",
+            "append_to_final_output": true
+          }
+        ],
+        "working_dir": "{{IG_INTEL_VAULT}}",
+        "inherit_env_vars": [
+          "PATH",
+          "HOME",
+          "ANTHROPIC_API_KEY",
+          "ANTHROPIC_AUTH_TOKEN",
+          "ANTHROPIC_BASE_URL",
+          "ANTHROPIC_MODEL",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+          "HF_HUB_DISABLE_XET",
+          "IG_INTEL_VAULT",
+          "DEEPSEEK_API_KEY"
+        ]
+      }
+    }
+  ]
+}

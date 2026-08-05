@@ -1,0 +1,28 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Claude / local harness
+.claude/
+
+# Media — heavy, and personal knowledge lives outside this repo
+*.wav
+*.mp3
+*.m4a
+*.mp4
+*.mov
+*.aac
+*.flac
+
+# Output / scratch
+out/
+*.log
+.DS_Store
+
+# Secrets
+.env
+result
+
+# build artifacts
+*.egg-info/
