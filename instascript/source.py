@@ -92,7 +92,8 @@ def _auth_wall(stderr: str) -> bool:
 def _run_ytdlp(url: str, out_tmpl: str, cookies: str | None) -> tuple[int, str, str]:
     cmd = [
         "yt-dlp", "-f", "bestaudio", "--no-playlist", "-o", out_tmpl,
-        "--print", "after_move:%(filepath)s|%(title)s|%(id)s|%(uploader)s",
+        "--print",
+        "after_move:%(filepath)s|%(title)s|%(id)s|%(uploader)s|%(description)s",
     ]
     if cookies:
         cmd += ["--cookies-from-browser", cookies]
@@ -127,6 +128,7 @@ def _download_url(url: str, out_dir: Path, cookies_browsers: str) -> dict:
         "title": fields[1] if len(fields) > 1 else media.stem,
         "id": fields[2] if len(fields) > 2 else media.stem,
         "uploader": fields[3] if len(fields) > 3 else "",
+        "description": fields[4] if len(fields) > 4 else "",
     }
 
 
@@ -141,11 +143,18 @@ def resolve(
         tmp_dir.mkdir(parents=True, exist_ok=True)
         meta = _download_url(input_arg, tmp_dir, cookies_browsers)
         media = meta["media"]
+        # Platforms like Instagram title every reel "Video by <user>", so a
+        # title-based slug would collide across the whole profile. Prefer the
+        # caption (description) when present, and always keep the source id
+        # tail so slugs stay unique even for identical/empty captions.
+        desc = (meta.get("description") or "").strip()
+        base = slugify(desc or meta["title"] or meta["id"])[:52]
+        slug = f"{base}-{meta['id'][-6:].lower()}" if base else slugify(meta["id"])
         source_meta = {
             "input": input_arg,
             "kind": "url",
             "url_sha256": url_hash(input_arg),
-            "slug": slugify(meta["title"] or meta["id"]),
+            "slug": slug,
             "title": meta["title"],
             "source_id": meta["id"],
             "uploader": meta["uploader"],

@@ -1,13 +1,18 @@
 """Stage C: faster-whisper transcription → canonical transcript (ground truth)."""
 
 import json
+import os
 from pathlib import Path
 
 from faster_whisper import WhisperModel
 
 
 def transcribe(wav_path: Path, model_size: str = "small") -> dict:
-    model = WhisperModel(model_size, device="cpu", compute_type="int8")
+    # Allow bounding CPU threads when several instances run in parallel.
+    # When unset, omit cpu_threads entirely so ctranslate2 uses its default.
+    threads = int(os.environ.get("INSTASCRIPT_CPU_THREADS", "0"))
+    kwargs = {"cpu_threads": threads} if threads else {}
+    model = WhisperModel(model_size, device="cpu", compute_type="int8", **kwargs)
     segments, info = model.transcribe(
         str(wav_path), word_timestamps=True, vad_filter=True
     )
