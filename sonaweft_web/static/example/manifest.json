@@ -26,7 +26,7 @@
     "corrections.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
     "review.json": "c176460769fd6760453d25204ba1c9ad623dbc2d10dd1c71c664491f57d9c230",
     "summary.md": "6176eea6195760e18495d2323959d45c4fc57e0b139952e230fa7aca1b9bb4f0",
-    "claims.md": "498b25fe9da66f223c3d03d13b78736b1e2c58e90226709f7cb6705e7b44673a"
+    "claims.md": "a89252284fe97d129dedad220ca6b3779282ea756754d3c66e0ebd084da7c864"
   },
   "asr_model": "Systran/faster-whisper-large-v3",
   "review_model": "deepseek-flash"
