@@ -28,4 +28,4 @@ cloud = ["modal==1.5.3"]
 packages = ["instascript", "sonaweft_web"]
 
 [tool.setuptools.package-data]
-sonaweft_web = ["templates/*.html", "static/*.css", "static/*.js"]
+sonaweft_web = ["templates/*.html", "static/*.css", "static/*.js", "static/example/*"]

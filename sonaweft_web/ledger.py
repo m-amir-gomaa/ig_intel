@@ -228,7 +228,7 @@ class Ledger(PaymentLedger):
                 ).fetchone()[0]
                 if used or daily >= 3 or monthly >= 20:
                     raise DomainError(
-                        "The bounded sample allowance is used. The local CLI remains available without hosted sample limits."
+                        "The bounded sample allowance is used. Hear the completed example above or use the local CLI without hosted sample limits."
                     )
             envelope = (
                 2000

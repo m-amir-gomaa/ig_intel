@@ -1,0 +1,33 @@
+{
+  "format": "instascript-export/v1",
+  "producer": "sonaweft",
+  "version": 1,
+  "language": "en",
+  "duration": 6.949,
+  "segments": [
+    {
+      "id": "s000000",
+      "start": 0.0,
+      "end": 2.48
+    },
+    {
+      "id": "s000001",
+      "start": 2.92,
+      "end": 6.06
+    }
+  ],
+  "files": {
+    "transcript.json": "2f829346ac25cc7a6ed30d588b1a3b835378b9292686f41c273a45a0f21c5252",
+    "source.json": "ef46122443425f171e95a200b825f42dc881c7419226cf91d19219709685658b",
+    "transcript.md": "faa8af398440718d142cd2135c159a36cd2e133dd70054129cefda739d1ab4ab",
+    "transcript.txt": "15e43f73fd7f028aa7bcbdc2b6a9acb77c15dcca147e575d5e4d25051235503d",
+    "transcript.srt": "3705f06aa1d00ef585e7e99f561b94127a171efc9504b682f631ea5388b3ac3b",
+    "transcript.vtt": "ad22c3e4c3ccd2abd26e3669696fda5595edca1028e961219dfe238b05033c72",
+    "corrections.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "review.json": "c176460769fd6760453d25204ba1c9ad623dbc2d10dd1c71c664491f57d9c230",
+    "summary.md": "6176eea6195760e18495d2323959d45c4fc57e0b139952e230fa7aca1b9bb4f0",
+    "claims.md": "498b25fe9da66f223c3d03d13b78736b1e2c58e90226709f7cb6705e7b44673a"
+  },
+  "asr_model": "Systran/faster-whisper-large-v3",
+  "review_model": "deepseek-flash"
+}

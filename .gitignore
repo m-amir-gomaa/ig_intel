@@ -9,6 +9,7 @@ __pycache__/
 # Media — heavy, and personal knowledge lives outside this repo
 *.wav
 *.mp3
+!sonaweft_web/static/example/audio.mp3
 *.m4a
 *.mp4
 *.mov

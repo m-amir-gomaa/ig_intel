@@ -1,0 +1,5 @@
+# AI-derived notes
+
+Advisory, not fact-checked. Original transcript preserved.
+
+A brief note stating that a careful reader can follow the original recording, followed by a remark that the example contains two short sentences.

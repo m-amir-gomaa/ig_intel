@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hear the source · Sonaweft example</title>
+    <meta
+      name="description"
+      content="Hear an original generated recording alongside actual Sonaweft speech recognition and source-linked portable files."
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/example.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">Sonaweft</a>
+      <nav aria-label="Main">
+        <a href="/">Open workbench</a><a href="/pricing">Pricing</a>
+      </nav>
+    </header>
+    <main class="policy">
+      <p class="eyebrow">A COMPLETED ORIGINAL EXAMPLE</p>
+      <h1>Hear what becomes a note.</h1>
+      <p>
+        This is actual output from our generated English recording, processed
+        with Whisper large-v3 on Modal and optional DeepSeek Flash review. It
+        starts no new processing job and needs no account.
+      </p>
+      <section class="card">
+        <h2>1. Hear the source</h2>
+        <audio
+          id="example-audio"
+          controls
+          preload="metadata"
+          src="/static/example/audio.mp3"
+        >
+          Your browser does not support the audio player.
+          <a href="/static/example/audio.mp3">Download the recording</a>.
+        </audio>
+        <p>
+          Original text: “A careful reader can follow the original recording.
+          This example contains two short sentences.” The recording was
+          generated locally with eSpeak; it contains no customer content.
+        </p>
+      </section>
+      <section class="card">
+        <h2>2. Follow the machine transcript</h2>
+        <p>
+          Choose a segment to seek to its place in the recording. This short,
+          clear sample does not establish accuracy on noise, accents or long
+          recordings.
+        </p>
+        <div id="example-segments">Loading the saved transcript…</div>
+        <p id="example-status" role="status"></p>
+      </section>
+      <section class="card">
+        <h2>3. Keep derived notes separate</h2>
+        <p>
+          The following is the provider's saved advisory summary, displayed as
+          text. The original transcript is preserved in the bundle; no
+          correction or factual verdict is implied.
+        </p>
+        <pre id="example-summary"></pre>
+      </section>
+      <section class="card">
+        <h2>4. Take the files with you</h2>
+        <p>
+          The ZIP contains actual Markdown, text, JSON, subtitles, review and a
+          hashed manifest. Audio is available separately. These files work
+          without an ongoing subscription.
+        </p>
+        <div class="actions">
+          <a
+            class="button-link"
+            href="/static/example/sonaweft-example.zip"
+            download
+            >Download complete text bundle ↓</a
+          ><a href="/static/example/transcript.md" download>Markdown ↓</a
+          ><a href="/static/example/transcript.vtt" download>WebVTT ↓</a
+          ><a href="/static/example/audio.mp3" download>Recording ↓</a>
+        </div>
+      </section>
+      <p><a href="/">Use your own authorized recording ↗</a></p>
+    </main>
+    <footer>
+      <span>Sonaweft · by Amir Gomaa</span>
+      <nav aria-label="Policies">
+        <a href="/terms">Terms</a><a href="/privacy">Privacy</a
+        ><a href="/refunds">Refunds</a>
+      </nav>
+    </footer>
+  </body>
+</html>

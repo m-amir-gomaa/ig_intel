@@ -1,6 +1,6 @@
 # Sonaweft — audio to source-linked notes
 
-[Open Sonaweft](https://m-amir-gomaa--sonaweft-web-app.us-east.modal.run) · [Product contract](docs/PRODUCT.md) · [Operations](docs/OPERATIONS.md) · [Release evidence](docs/RELEASE.md)
+[Open Sonaweft](https://m-amir-gomaa--sonaweft-web-app.us-east.modal.run) · [Hear completed example](https://m-amir-gomaa--sonaweft-web-app.us-east.modal.run/example) · [Product contract](docs/PRODUCT.md) · [Operations](docs/OPERATIONS.md) · [Release evidence](docs/RELEASE.md)
 
 Turn authorized recordings into timestamped transcripts, editable drafts, subtitles and portable Markdown. Hear each segment while correcting it. Original speech recognition, your corrections and optional AI notes remain separate. Formerly instaScript / Transcript Studio; existing commands, Python imports and GitHub URLs remain compatible.
 

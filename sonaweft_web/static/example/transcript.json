@@ -1,0 +1,113 @@
+{
+  "model": "Systran/faster-whisper-large-v3",
+  "model_revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "language": "en",
+  "duration": 6.949,
+  "audio_file": "audio-2b640621567d2a99.wav",
+  "segments": [
+    {
+      "id": 1,
+      "start": 0.0,
+      "end": 2.48,
+      "text": "A careful reader can follow the original recording.",
+      "words": [
+        {
+          "word": " A",
+          "start": 0.0,
+          "end": 0.08,
+          "probability": 0.8418
+        },
+        {
+          "word": " careful",
+          "start": 0.08,
+          "end": 0.4,
+          "probability": 0.9961
+        },
+        {
+          "word": " reader",
+          "start": 0.4,
+          "end": 0.72,
+          "probability": 0.9956
+        },
+        {
+          "word": " can",
+          "start": 0.72,
+          "end": 0.98,
+          "probability": 0.998
+        },
+        {
+          "word": " follow",
+          "start": 0.98,
+          "end": 1.34,
+          "probability": 0.9907
+        },
+        {
+          "word": " the",
+          "start": 1.34,
+          "end": 1.62,
+          "probability": 0.9985
+        },
+        {
+          "word": " original",
+          "start": 1.62,
+          "end": 1.96,
+          "probability": 0.998
+        },
+        {
+          "word": " recording.",
+          "start": 1.96,
+          "end": 2.48,
+          "probability": 0.999
+        }
+      ],
+      "avg_logprob": -0.19103422051384336,
+      "no_speech_prob": 0.01232147216796875
+    },
+    {
+      "id": 2,
+      "start": 2.92,
+      "end": 6.06,
+      "text": "This example contains two short sentences.",
+      "words": [
+        {
+          "word": " This",
+          "start": 2.92,
+          "end": 3.5,
+          "probability": 0.9922
+        },
+        {
+          "word": " example",
+          "start": 3.5,
+          "end": 3.84,
+          "probability": 0.9976
+        },
+        {
+          "word": " contains",
+          "start": 3.84,
+          "end": 4.58,
+          "probability": 0.9976
+        },
+        {
+          "word": " two",
+          "start": 4.58,
+          "end": 5.04,
+          "probability": 0.9082
+        },
+        {
+          "word": " short",
+          "start": 5.04,
+          "end": 5.48,
+          "probability": 0.9985
+        },
+        {
+          "word": " sentences.",
+          "start": 5.48,
+          "end": 6.06,
+          "probability": 0.999
+        }
+      ],
+      "avg_logprob": -0.19103422051384336,
+      "no_speech_prob": 0.01232147216796875
+    }
+  ]
+}

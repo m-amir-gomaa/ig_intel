@@ -266,7 +266,15 @@ class WebTests(unittest.TestCase):
         )
 
     def test_policy_responsiveness_boundary_and_closed_checkout_configuration(self):
-        for path in ("/", "/pricing", "/terms", "/privacy", "/refunds", "/checkout"):
+        for path in (
+            "/",
+            "/example",
+            "/pricing",
+            "/terms",
+            "/privacy",
+            "/refunds",
+            "/checkout",
+        ):
             self.assertEqual(self.c.get(path).status_code, 200)
         self.assertFalse(self.c.get("/api/checkout-config").json()["enabled"])
         self.assertNotIn(

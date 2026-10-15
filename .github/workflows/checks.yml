@@ -25,4 +25,5 @@ jobs:
       - run: ruff check --select E9,F63,F7,F82,F401 app.py instascript sonaweft_web scripts tests
       - run: node --check sonaweft_web/static/app.js
       - run: node --check sonaweft_web/static/checkout.js
+      - run: node --check sonaweft_web/static/example.js
       - run: git diff --check

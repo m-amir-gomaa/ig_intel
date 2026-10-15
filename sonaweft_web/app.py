@@ -193,6 +193,7 @@ def create_app(
         return FileResponse(ROOT / "templates/index.html", media_type="text/html")
 
     @app.get("/checkout")
+    @app.get("/example")
     @app.get("/pricing")
     @app.get("/terms")
     @app.get("/privacy")
