@@ -1,5 +1,5 @@
 {
-  description = "instaScript — reel/audio → local AI-verified transcripts";
+  description = "Sonaweft — audio to timestamped transcripts and source-linked notes";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs = {

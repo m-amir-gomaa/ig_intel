@@ -1,5 +1,8 @@
 # instaScript — Demo script + Upwork walkthrough
 
+> Status: optional/historical reference, preserved for discovery. Commands and external integrations in this document were not verified during the cleanup. Required vault instructions, accounts, and connected tools are separate from this repository. For current runtime behavior and limits, use the project README and architecture document. Older claims about guarantees or end-to-end verification are historical descriptions, not current release evidence.
+
+
 Live demo runs on this reel:
 `https://www.instagram.com/reel/DY-iZeGgYjj/`
 (28.6 s, 540×960 — a "scalar physics / gravitational waves" clip.)
@@ -38,7 +41,7 @@ cookies when a platform demands login:
 
 ```sh
 # default browser for cookies — set to yours if not Firefox:
-echo 'YTDLP_COOKIES_FROM_BROWSER=firefox' >> .env
+export YTDLP_COOKIES_FROM_BROWSER=firefox  # CLI reads the process environment
 # log into Instagram in Firefox once — then you're set
 ```
 

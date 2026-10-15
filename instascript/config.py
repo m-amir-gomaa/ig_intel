@@ -15,7 +15,11 @@ from pathlib import Path
 HOME = Path.home()
 
 # Single home for pipeline output + knowledge (defaults to ~/ig_intel).
-IG_INTEL_VAULT = Path(os.environ.get("IG_INTEL_VAULT", HOME / "ig_intel"))
+IG_INTEL_VAULT = Path(
+    os.environ.get(
+        "SONAWEFT_VAULT", os.environ.get("IG_INTEL_VAULT", HOME / "ig_intel")
+    )
+)
 
 # Pipeline output root — the vault Inbox is the transcript entry point.
 PIPELINE_INBOX = IG_INTEL_VAULT / "Inbox"
@@ -26,7 +30,7 @@ QUEUE_FILE = PIPELINE_INBOX / "queue.md"
 
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-flash")
 
 # Browser to source login cookies from when a platform (e.g. Instagram) needs
 # a logged-in session. Comma-separated list = retry order. Empty disables.

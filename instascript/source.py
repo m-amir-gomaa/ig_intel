@@ -4,9 +4,8 @@ Dedup hashes live here:
 - url_sha256    — SHA-256 of the URL with tracking params (utm_*, igsh, …) stripped.
                   Same share link (different utm string) → same hash.
 - content_sha256 — SHA-256 of the normalized 16 kHz wav, computed by the CLI
-                  after Stage B. Decoding is deterministic, so the same audio
-                  from a URL, a local file, or a re-encoded copy yields the same
-                  hash → nothing is ever transcribed twice.
+                  after Stage B. Only identical normalized samples match. Lossy re-encodings may differ;
+                  this is exact-sample deduplication, not semantic recognition.
 """
 
 import hashlib
@@ -31,7 +30,8 @@ def normalize_url(url: str) -> str:
     if not query:
         return base.rstrip("/")
     keep = [
-        p for p in query.split("&")
+        p
+        for p in query.split("&")
         if p and not p.split("=", 1)[0].lower().startswith(_TRACKING_PREFIXES)
     ]
     q = "&".join(keep)
@@ -70,12 +70,18 @@ def hash_audio(wav_path: Path, chunk_frames: int = 1 << 18) -> str:
 def _ffprobe_duration(path: Path) -> float:
     out = subprocess.run(
         [
-            "ffprobe", "-v", "quiet",
-            "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1",
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
             str(path),
         ],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     try:
         return float(out.stdout.strip())
@@ -91,15 +97,23 @@ def _auth_wall(stderr: str) -> bool:
 
 def _run_ytdlp(url: str, out_tmpl: str, cookies: str | None) -> tuple[int, str, str]:
     cmd = [
-        "yt-dlp", "-f", "bestaudio", "--no-playlist", "-o", out_tmpl,
+        "yt-dlp",
+        "-f",
+        "bestaudio",
+        "--no-playlist",
+        "-o",
+        out_tmpl,
         "--print",
-        "after_move:%(filepath)s|%(title)s|%(id)s|%(uploader)s|%(description)s",
+        'after_move:{"filepath":%(filepath)j,"title":%(title)j,"id":%(id)j,"uploader":%(uploader)j,"description":%(description)j}',
     ]
     if cookies:
         cmd += ["--cookies-from-browser", cookies]
     cmd.append(url)
     proc = subprocess.run(
-        cmd, capture_output=True, text=True, check=False,
+        cmd,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -120,15 +134,21 @@ def _download_url(url: str, out_dir: Path, cookies_browsers: str) -> dict:
                 break
     if ret != 0:
         raise RuntimeError(f"yt-dlp failed: {err.strip()}")
-    line = out.strip().splitlines()[0] if out.strip() else ""
-    fields = line.split("|")
-    media = Path(fields[0])
+    try:
+        fields = json.loads(out.strip().splitlines()[-1])
+        media = Path(fields["filepath"]).resolve()
+        if not media.is_file() or not media.is_relative_to(out_dir.resolve()):
+            raise ValueError()
+    except (ValueError, KeyError, TypeError, IndexError):
+        raise RuntimeError(
+            "yt-dlp returned invalid metadata or no downloaded file."
+        ) from None
     return {
         "media": media,
-        "title": fields[1] if len(fields) > 1 else media.stem,
-        "id": fields[2] if len(fields) > 2 else media.stem,
-        "uploader": fields[3] if len(fields) > 3 else "",
-        "description": fields[4] if len(fields) > 4 else "",
+        "title": fields.get("title") or media.stem,
+        "id": fields.get("id") or media.stem,
+        "uploader": fields.get("uploader") or "",
+        "description": fields.get("description") or "",
     }
 
 

@@ -1,13 +1,13 @@
-"""Stage C: faster-whisper transcription → canonical transcript (ground truth)."""
+"""Stage C: faster-whisper transcription → original machine transcript (not factual ground truth)."""
 
 import json
 import os
 from pathlib import Path
 
-from faster_whisper import WhisperModel
-
 
 def transcribe(wav_path: Path, model_size: str = "small") -> dict:
+    from faster_whisper import WhisperModel
+
     # Allow bounding CPU threads when several instances run in parallel.
     # When unset, omit cpu_threads entirely so ctranslate2 uses its default.
     threads = int(os.environ.get("INSTASCRIPT_CPU_THREADS", "0"))
@@ -22,13 +22,15 @@ def transcribe(wav_path: Path, model_size: str = "small") -> dict:
             {"word": w.word, "start": round(w.start, 2), "end": round(w.end, 2)}
             for w in (seg.words or [])
         ]
-        seg_list.append({
-            "id": seg.id,
-            "start": round(seg.start, 2),
-            "end": round(seg.end, 2),
-            "text": seg.text.strip(),
-            "words": words,
-        })
+        seg_list.append(
+            {
+                "id": seg.id,
+                "start": round(seg.start, 2),
+                "end": round(seg.end, 2),
+                "text": seg.text.strip(),
+                "words": words,
+            }
+        )
     return {
         "model": model_size,
         "language": info.language,
@@ -50,3 +52,9 @@ def write_files(transcript: dict, slug_dir: Path) -> None:
         for s in transcript["segments"]
     )
     (slug_dir / "transcript.txt").write_text(txt + "\n", encoding="utf-8")
+    from .subtitles import render
+
+    for format in ("srt", "vtt"):
+        (slug_dir / f"transcript.{format}").write_text(
+            render(transcript, format), encoding="utf-8"
+        )

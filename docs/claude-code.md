@@ -1,5 +1,8 @@
 # instaScript + Claude Code — setup & daily driver
 
+> Status: optional/historical reference, preserved for discovery. Commands and external integrations in this document were not verified during the cleanup. Required vault instructions, accounts, and connected tools are separate from this repository. For current runtime behavior and limits, use the project README and architecture document. Older claims about guarantees or end-to-end verification are historical descriptions, not current release evidence.
+
+
 > **Optional layer.** The `instascript` CLI is fully standalone — every command
 > in this doc merely drives that same CLI. Claude Code adds *judgment* on top:
 > organizing, linking, researching, and fact-checking the transcript vault. It

@@ -6,7 +6,7 @@
 }:
 python3.pkgs.buildPythonApplication {
   pname = "instascript";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = lib.cleanSourceWith {
     src = ./.;
@@ -14,7 +14,9 @@ python3.pkgs.buildPythonApplication {
       let
         base = baseNameOf path;
       in
-      base != ".venv"
+      !(lib.hasPrefix ".venv" base)
+      && base != ".local"
+      && !(lib.hasPrefix ".env" base)
       && base != ".git"
       && base != ".claude"
       && base != "__pycache__"
@@ -28,22 +30,28 @@ python3.pkgs.buildPythonApplication {
   propagatedBuildInputs = with python3.pkgs; [
     faster-whisper
     requests
+    httpx
   ];
+  # Nixpkgs supplies mutually compatible PyAV/faster-whisper versions; the pip
+  # deployment lock pins its own tested pair independently.
+  pythonRelaxDeps = [ "faster-whisper" "av" "httpx" ];
 
   # yt-dlp (URL resolution) + ffmpeg (audio normalization) must be on PATH at
   # runtime. Nix python wrappers don't freeze the caller's PATH, so we pin a
   # wrapper that guarantees them regardless of the user's environment.
   postInstall = ''
-    wrapProgram $out/bin/instascript \
-      --prefix PATH : ${lib.makeBinPath [ ffmpeg yt-dlp ]} \
-      --set-default HF_HUB_DISABLE_XET 1
+    for command in instascript sonaweft; do
+      wrapProgram $out/bin/$command \
+        --prefix PATH : ${lib.makeBinPath [ ffmpeg yt-dlp ]} \
+        --set-default HF_HUB_DISABLE_XET 1
+    done
   '';
 
   meta = with lib; {
-    description = "Reel/audio → local AI-verified transcripts (faster-whisper, optional DeepSeek review, built-in dedup)";
+    description = "Sonaweft: audio to source-linked notes (faster-whisper, optional DeepSeek review, built-in dedup)";
     homepage = "https://github.com/m-amir-gomaa/ig_intel";
     license = licenses.mit;
-    mainProgram = "instascript";
+    mainProgram = "sonaweft";
     platforms = platforms.linux;
   };
 }

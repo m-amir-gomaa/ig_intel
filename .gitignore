@@ -26,3 +26,12 @@ result
 
 # build artifacts
 *.egg-info/
+build/
+dist/
+
+# Private hosted state, credentials, fixtures and Python environments
+.local/
+.venv*/
+.env*
+!.env.example
+*.sqlite*

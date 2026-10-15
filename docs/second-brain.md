@@ -1,5 +1,8 @@
 # ig_intel — AI-Managed Second Brain (Design)
 
+> Status: optional/historical reference, preserved for discovery. Commands and external integrations in this document were not verified during the cleanup. Required vault instructions, accounts, and connected tools are separate from this repository. For current runtime behavior and limits, use the project README and architecture document. Older claims about guarantees or end-to-end verification are historical descriptions, not current release evidence.
+
+
 > **Optional add-on.** The core instaScript project is transcript extraction +
 > AI verification (`--review`). This document describes the optional Obsidian
 > knowledge-system layer that runs on top of the transcript inbox. Point

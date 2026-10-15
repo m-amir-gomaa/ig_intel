@@ -1,7 +1,7 @@
 """LLM provider seam.
 
 DirectDeepSeek wired now. OpenRouter reserved for the web-search/RAG phase
-(deepseek-v4-pro + web_search tool) — swap the provider, keep the interface.
+(future separately bounded research tool) — swap the provider, keep the interface.
 """
 
 import abc
@@ -34,6 +34,8 @@ class DirectDeepSeek(LLMProvider):
             ],
             "temperature": 0.2,
             "stream": False,
+            "max_tokens": 4096,
+            "thinking": {"type": "disabled"},
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
@@ -48,7 +50,7 @@ class DirectDeepSeek(LLMProvider):
 
 
 class OpenRouter(LLMProvider):
-    """Reserved for RAG phase (deepseek-v4-pro + web_search)."""
+    """Reserved for RAG phase (future separately bounded research)."""
 
     def __init__(self, api_key: str):  # noqa: ARG002
         raise NotImplementedError("OpenRouter lands with the web-search/RAG phase")

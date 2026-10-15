@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# instaScript launcher — POSIX (Linux/macOS). Runs the project venv.
+# Compatibility launcher for Sonaweft; no credentials are loaded from files.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -16,4 +16,11 @@ fi
 
 # Make the package importable from any cwd.
 export PYTHONPATH="$ROOT"${PYTHONPATH:+:$PYTHONPATH}
-exec "$ROOT/.venv/bin/python" -m instascript "$@"
+if [ -n "${SONAWEFT_PYTHON:-}" ]; then
+    PYTHON_BIN="$SONAWEFT_PYTHON"
+elif [ -x "$ROOT/.venv-web/bin/python" ]; then
+    PYTHON_BIN="$ROOT/.venv-web/bin/python"
+else
+    PYTHON_BIN="$ROOT/.venv/bin/python"
+fi
+exec "$PYTHON_BIN" -m instascript "$@"

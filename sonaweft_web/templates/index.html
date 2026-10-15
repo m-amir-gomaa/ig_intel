@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Sonaweft turns audio into timestamped transcripts, source-linked notes and portable Markdown. Review the recording, preserve the original and take your work anywhere."
+    />
+    <title>Sonaweft — audio to source-linked notes</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script defer src="/static/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/"
+        ><span class="mark" aria-hidden="true">s</span>Sonaweft</a
+      >
+      <nav>
+        <a href="/pricing">Pricing</a
+        ><a
+          href="https://github.com/m-amir-gomaa/ig_intel"
+          target="_blank"
+          rel="noopener"
+          >Local CLI ↗</a
+        ><a href="https://m-amir-gomaa.github.io/">Amir’s portfolio ↗</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">LISTEN CLOSELY. KEEP THE SOURCE.</p>
+          <h1>
+            From a recording<br />to something<br /><em>worth keeping.</em>
+          </h1>
+          <p class="lead">
+            Transcribe. Follow the timestamps. Correct what you hear. Turn the
+            useful parts into notes that always point back to their source.
+          </p>
+          <div class="tags">
+            <span>Original ASR preserved</span><span>Markdown + subtitles</span
+            ><span>No subscription</span>
+          </div>
+        </div>
+        <div
+          class="signal"
+          aria-label="The workflow: audio to transcript to linked notes"
+        >
+          <div class="wave" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i
+            ><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <span class="flow-label">AUDIO → TRANSCRIPT → LINKED NOTES</span>
+          <blockquote>
+            “A careful reader can follow<br />the original recording.”
+          </blockquote>
+          <div class="signal-foot">
+            <span>00:00 – 00:09</span><span>Original generated example</span>
+          </div>
+        </div>
+      </section>
+      <section class="workbench" aria-labelledby="workbench-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">YOUR WORKBENCH</p>
+            <h2 id="workbench-title">A clear path through the recording.</h2>
+          </div>
+          <p id="balance">Opening a private workspace…</p>
+        </div>
+        <div id="status" role="status" aria-live="polite">Loading…</div>
+        <div class="workspace-grid">
+          <section class="card">
+            <h3>1. Choose your recording</h3>
+            <p>
+              English speech · MP3, M4A, WAV, FLAC, OGG, WebM or video with
+              audio · up to 64 MiB / 60 minutes.
+            </p>
+            <form id="upload-form">
+              <label
+                >Audio or video file<input
+                  id="media-file"
+                  type="file"
+                  accept="audio/*,video/*"
+                  required /></label
+              ><button id="inspect-button" disabled>Inspect recording</button>
+            </form>
+            <p class="hint">
+              No transcription starts during inspection. For YouTube and
+              podcasts, use a recording you may process or the local CLI. Hosted
+              URL downloading is not enabled.
+            </p>
+            <div id="quote" hidden>
+              <h4 id="filename"></h4>
+              <p id="duration"></p>
+              <label
+                >Processing<select id="review-mode">
+                  <option value="none">Transcript only</option>
+                  <option value="standard">
+                    Transcript + source-linked notes · DeepSeek Flash
+                  </option>
+                  <option value="advanced">
+                    Transcript + deeper review · DeepSeek V4 Pro
+                  </option>
+                </select></label
+              >
+              <p id="price" class="price"></p>
+              <label class="check"
+                ><input id="rights" type="checkbox" />I have permission to
+                process this recording.</label
+              ><label class="check" id="ai-consent-label" hidden
+                ><input id="ai-consent" type="checkbox" />Send transcript text
+                to DeepSeek for optional advisory review. I understand this is
+                not verified fact-checking.</label
+              >
+              <div class="actions">
+                <button id="trial-button">Try the first 30 seconds</button
+                ><button id="run-button" class="secondary" disabled>
+                  Confirm paid processing
+                </button>
+              </div>
+              <p class="hint">
+                A bounded sample is available once per workspace/IP, subject to
+                global caps. All selected deliverables must complete before paid
+                credit is consumed.
+              </p>
+            </div>
+          </section>
+          <section class="card">
+            <div class="section-head">
+              <h3>2. Follow the work</h3>
+              <button id="refresh-jobs" class="text-button">Refresh</button>
+            </div>
+            <div id="jobs" class="jobs"><p>Your jobs will appear here.</p></div>
+            <details class="account">
+              <summary>Credits &amp; private recovery</summary>
+              <p id="billing-note"></p>
+              <label class="check"
+                ><input id="purchase-consent" type="checkbox" />I saved my
+                recovery key and accept the <a href="/terms">terms</a>,
+                <a href="/privacy">privacy notice</a> and
+                <a href="/refunds">refund policy</a>.</label
+              >
+              <div class="actions">
+                <button id="pack5" disabled>Add $5 credits</button
+                ><button id="pack10" disabled>Add $10 credits</button>
+              </div>
+              <button id="make-key" class="secondary">
+                Create / rotate recovery key
+              </button>
+              <div id="key-box" hidden>
+                <label
+                  >Save this privately<input
+                    id="recovery-key"
+                    readonly
+                    autocomplete="off" /></label
+                ><button id="hide-key" class="text-button">Hide key</button>
+              </div>
+              <form id="restore-form">
+                <label
+                  >Existing recovery key<input
+                    id="restore-key"
+                    type="password"
+                    autocomplete="off"
+                    required /></label
+                ><button class="secondary">Restore workspace</button>
+              </form>
+              <p class="hint">
+                Keys restore Sonaweft credits and unexpired files. This balance
+                is separate from Pageweft. Do not send keys or recordings to
+                support.
+              </p>
+            </details>
+          </section>
+        </div>
+      </section>
+      <section
+        id="review-panel"
+        class="card review"
+        hidden
+        aria-labelledby="review-title"
+      >
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">3. REVIEW &amp; TAKE IT WITH YOU</p>
+            <h2 id="review-title">Keep your ears in the loop.</h2>
+          </div>
+          <button id="close-review" class="text-button">Close</button>
+        </div>
+        <audio id="audio" controls preload="metadata"></audio>
+        <div class="review-grid">
+          <div>
+            <label
+              >Find in transcript<input
+                id="segment-search"
+                type="search"
+                placeholder="A word or phrase…"
+            /></label>
+            <div
+              id="segments"
+              class="segments"
+              aria-label="Transcript segments"
+            ></div>
+          </div>
+          <div>
+            <p id="selected-time"></p>
+            <h3>Original machine transcript</h3>
+            <p id="original" class="original"></p>
+            <label
+              >Your correction<textarea id="editor" rows="7"></textarea></label
+            ><button id="save-edit">Save correction</button>
+            <div id="suggestions"></div>
+            <p class="hint">
+              Original text stays unchanged. Saved corrections are exported
+              separately. AI suggestions are advisory.
+            </p>
+            <div id="ai-notes" hidden>
+              <h3>AI-derived notes</h3>
+              <pre id="summary"></pre>
+              <h3>Claims to investigate</h3>
+              <p class="hint">
+                Optional source lookup sends only the selected claim to
+                Crossref. Matches are unreviewed scholarly metadata, not proof.
+              </p>
+              <label class="check"
+                ><input type="checkbox" id="research-consent" />Allow sending a
+                selected claim to Crossref when I click Find sources.</label
+              >
+              <div id="claims"></div>
+            </div>
+          </div>
+        </div>
+        <div class="actions export">
+          <a id="bundle-link" class="button" href="#"
+            >Download complete bundle ↓</a
+          ><a id="md-link" href="#">Markdown ↓</a
+          ><a id="srt-link" href="#">SRT ↓</a
+          ><a id="vtt-link" href="#">WebVTT ↓</a
+          ><a id="json-link" href="#">Original JSON ↓</a>
+        </div>
+        <p class="hint">
+          Portable instascript-export/v1 bundles include source hashes and
+          segment references for Obsidian or the planned Noteweld importer. That
+          importer is a later feature.
+        </p>
+      </section>
+      <section class="closing">
+        <h2>Your knowledge should outlive the tool.</h2>
+        <p>
+          Use files in your own editor, Obsidian vault or language-model
+          workflow. Run the CLI locally when hosted processing does not suit
+          your data. Files expire after 48 hours; export what you want to keep.
+        </p>
+        <a href="https://m-amir-gomaa--mineru-pdf-extractor-web-app.modal.run/"
+          >Working from PDFs? Open Pageweft ↗</a
+        >
+      </section>
+    </main>
+    <footer>
+      <span>Sonaweft · by Amir Gomaa</span>
+      <div>
+        <a href="/terms">Terms</a><a href="/privacy">Privacy</a
+        ><a href="/refunds">Refunds</a
+        ><a href="mailto:mo.gomaa.formal@gmail.com">Support</a>
+      </div>
+    </footer>
+  </body>
+</html>

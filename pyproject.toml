@@ -4,18 +4,28 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "instascript"
-version = "0.1.0"
-description = "Reel/audio → local AI-verified transcripts. Standalone CLI, optional DeepSeek review, built-in dedup."
+version = "0.2.0"
+description = "Sonaweft: audio to timestamped transcripts, source-linked notes and portable exports."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
-    "faster-whisper>=1.0",
+    "faster-whisper==1.2.1",
+    "av==15.1.0",
     "requests>=2.31",
+    "httpx==0.28.1",
 ]
 
 [project.scripts]
 instascript = "instascript.cli:main"
+sonaweft = "instascript.cli:main"
+
+[project.optional-dependencies]
+web = ["fastapi==0.141.1", "uvicorn==0.52.1", "cryptography==46.0.5", "python-multipart==0.0.32"]
+cloud = ["modal==1.5.3"]
 
 [tool.setuptools]
-packages = ["instascript"]
+packages = ["instascript", "sonaweft_web"]
+
+[tool.setuptools.package-data]
+sonaweft_web = ["templates/*.html", "static/*.css", "static/*.js"]

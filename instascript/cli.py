@@ -1,17 +1,8 @@
-"""CLI orchestration.
+"""Sonaweft CLI: recoverable ingest, queues, separate reviews and subtitle export.
 
-Three modes, no Claude Code required:
-
-  Single mode:   instascript <url|file>            → Inbox/<slug>/   (manual)
-  Queue mode:    instascript --queue [FILE]        → every `- [ ]` link in the
-                                                   queue file through the
-                                                   pipeline, checked off on
-                                                   success.               (auto)
-  Review mode:   instascript --review-item <slug>  → summary.md + flags.md
-                                                   on an existing item.  (manual)
-
-Claude Code is an OPTIONAL orchestration layer (UTCP tools). The CLI below is
-the complete, standalone interface — nothing external is ever required.
+Legacy instascript commands remain compatible. Local ASR needs installed media
+tools and model weights; optional review additionally needs a provider account.
+No external agent or editor plugin is required.
 """
 
 import argparse
@@ -22,8 +13,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from . import audio, config, source, summarize, transcribe, ui
-from .llm import get_provider
+from . import config, ui
 
 log = logging.getLogger("instascript")
 
@@ -47,7 +37,13 @@ def _existing_index(
             continue
         seen.add(p)
         for sj in p.rglob("source.json"):
-            if ".download" in sj.parts:
+            from .pipeline import complete_item
+
+            if (
+                ".pending" in sj.parts
+                or ".download" in sj.parts
+                or not complete_item(sj.parent)
+            ):
                 continue
             try:
                 data = json.loads(sj.read_text(encoding="utf-8"))
@@ -68,116 +64,43 @@ def _label(meta: dict | None, fallback: str = "?") -> str:
     return str(title)[:40]
 
 
+def _run_single(input_arg, args, quiet=False, pos=(0, 0)):
+    """Publish the requested complete result, preserving interrupted ASR work privately."""
+    from .pipeline import ingest
+
+    result = ingest(
+        input_arg,
+        Path(args.out).expanduser(),
+        model=args.model,
+        review=args.review,
+        review_model=getattr(args, "review_model", "standard"),
+        cookies_browsers=config.YTDLP_COOKIES_FROM_BROWSER,
+    )
+    if not quiet:
+        ui.success("Complete Sonaweft export is ready; original ASR is preserved.")
+    else:
+        ui.compact(*pos, result.name[:40], "done")
+    print(result)
+    return 0, "done"
+
+
 def run_single(
     input_arg: str,
     args: argparse.Namespace,
     quiet: bool = False,
     pos: tuple[int, int] = (0, 0),
 ) -> tuple[int, str]:
-    """Run the pipeline for one source. Returns (exit_code, status).
-
-    status: done | dup | error. In manual mode (quiet=False) full progress is
-    rendered; in queue mode (quiet=True) one compact line is printed at the end.
-    """
-    is_url = input_arg.startswith(("http://", "https://"))
-    out_root = Path(args.out).expanduser()
-    total = 4 if args.review else 3
-
-    if not quiet:
-        ui.banner("instaScript · reel/audio → local transcript")
-
-    url_map, content_map = _existing_index([config.IG_INTEL_VAULT, out_root])
-
-    # Layer 1: exact link dedup — before any download.
-    if is_url:
-        uh = source.url_hash(input_arg)
-        if uh in url_map:
-            if not quiet:
-                ui.skip("already ingested — same link (url_sha256)")
-                ui.info(f"existing: {url_map[uh]}")
-                print(url_map[uh])
-            else:
-                ui.compact(*pos, _label(None, input_arg), "dup", "same link, skipped")
-            return 0, "dup"
-
-    # Resolve input → media + metadata (yt-dlp for URLs, else local file).
     try:
-        media, meta = source.resolve(
-            input_arg, config.PIPELINE_INBOX, config.YTDLP_COOKIES_FROM_BROWSER
-        )
-    except Exception as e:  # noqa: BLE001
-        if not quiet:
-            ui.error(f"source resolve failed: {e}")
+        return _run_single(input_arg, args, quiet, pos)
+    except (
+        Exception
+    ) as error:  # Keep failed items pending; continue the rest of a queue.
+        log.debug("pipeline failed for %s", input_arg, exc_info=True)
+        if quiet:
+            ui.compact(*pos, input_arg[:40], "error", str(error)[:60])
         else:
-            ui.compact(*pos, _label(None, input_arg), "error", str(e)[:60])
+            ui.error(f"pipeline failed: {error}")
         return 1, "error"
-
-    if not quiet:
-        detail = (
-            f"{meta['title']} ({meta['uploader']} · {meta['duration']:.1f}s)"
-            if meta["kind"] == "url" else str(meta["title"])
-        )
-        ui.step(1, total, "source", detail)
-
-    slug_dir = out_root / meta["slug"]
-    slug_dir.mkdir(parents=True, exist_ok=True)
-
-    # URL case: move downloaded media into slug dir.
-    if meta["kind"] == "url" and media.parent != slug_dir:
-        dest = slug_dir / media.name
-        shutil.move(str(media), str(dest))
-        media = dest
-
-    wav = audio.normalize(media, slug_dir / "audio.wav")
-    if not quiet:
-        ui.step(2, total, "audio", "16 kHz mono → audio.wav")
-
-    # Layer 2: content dedup — hash the PCM samples, not the container bytes
-    # or the wav header (which can differ between ffmpeg builds).
-    meta["content_sha256"] = source.hash_audio(wav)
-    if existing := content_map.get(meta["content_sha256"]):
-        if existing != str(slug_dir):  # different item, same audio → drop new
-            shutil.rmtree(slug_dir, ignore_errors=True)
-        if not quiet:
-            ui.skip("already ingested — identical audio (content_sha256)")
-            ui.info(f"existing: {existing}")
-            print(existing)
-        else:
-            ui.compact(*pos, _label(meta), "dup", "same audio, skipped")
-        return 0, "dup"
-
-    (slug_dir / "source.json").write_text(
-        json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
-
-    if not quiet:
-        ui.step(3, total, "transcribe", f"faster-whisper {args.model} (CPU int8)")
-    tr = transcribe.transcribe(wav, args.model)
-    transcribe.write_files(tr, slug_dir)
-
-    if args.review:
-        try:
-            provider = get_provider()
-        except Exception as e:  # noqa: BLE001
-            ui.warn(f"review skipped: {e} (transcript saved; use --review-item later)")
-            if not quiet:
-                ui.done_block(slug_dir)
-            else:
-                ui.compact(*pos, _label(meta), "done")
-            print(slug_dir)
-            return 0, "done"
-        if not quiet:
-            ui.step(4, total, "review", "DeepSeek summary + factual flags")
-        result = summarize.summarize_and_flag(provider, tr, slug_dir)
-        if not quiet:
-            ui.info(f"flags: {result['flags_file'] or 'none — nothing flaggable'}")
-
-    if not quiet:
-        ui.done_block(slug_dir)
-    else:
-        ui.compact(*pos, _label(meta), "done")
-    print(slug_dir)
-    return 0, "done"
 
 
 def run_queue(args: argparse.Namespace) -> int:
@@ -207,7 +130,8 @@ def run_queue(args: argparse.Namespace) -> int:
 
     # Drop processed lines; keep headers/comments and any failed items.
     new_lines = [
-        line for line in lines
+        line
+        for line in lines
         if not ((m := _QUEUE_LINE_RE.match(line)) and m.group(1) in done)
     ]
     qfile.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
@@ -228,34 +152,55 @@ def _resolve_item_dir(ref: str) -> Path | None:
     return None
 
 
-def run_review_item(args: argparse.Namespace) -> int:
+def run_review_item(args):
+    import os
+    import tempfile
+    import uuid
+    from .review import review_transcript
+    from .contract import bundle
+
     d = _resolve_item_dir(args.review_item)
     if d is None:
-        ui.error(f"item not found: {args.review_item} (looked in Inbox and vault)")
+        ui.error("Transcript item not found.")
         return 1
-    tr_path = d / "transcript.json"
-    if not tr_path.is_file():
-        ui.error(f"no transcript.json in {d}")
-        return 1
-    tr = json.loads(tr_path.read_text(encoding="utf-8"))
     try:
-        provider = get_provider()
-    except Exception as e:  # noqa: BLE001
-        ui.error(f"review unavailable: {e}")
+        raw = json.loads((d / "transcript.json").read_text())
+        source_meta = json.loads((d / "source.json").read_text())
+        review = review_transcript(raw, getattr(args, "review_model", "standard"))
+        root = d / "reviews"
+        root.mkdir(exist_ok=True)
+        stage = Path(tempfile.mkdtemp(prefix=".pending-", dir=root))
+        try:
+            files = bundle(raw, source_meta, review, {})
+            for name in ("review.json", "summary.md", "claims.md"):
+                (stage / name).write_text(files[name], encoding="utf-8")
+            target = root / str(uuid.uuid4())
+            os.rename(stage, target)
+        finally:
+            if stage.exists():
+                shutil.rmtree(stage)
+        ui.success(f"Source-linked advisory review written → {target}")
+        return 0
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as error:
+        ui.error(f"Review failed: {error}")
         return 1
-
-    ui.banner(f"instaScript · review {d.name}")
-    result = summarize.summarize_and_flag(provider, tr, d)
-    ui.success(f"summary written → {d}/summary.md")
-    if result["flags_file"]:
-        ui.success(f"flags written  → {d}/{result['flags_file']}")
-    else:
-        ui.info("flags: none — nothing flaggable")
-    print(d)
-    return 0
 
 
 def run(args: argparse.Namespace) -> int:
+    if args.export_item:
+        from .subtitles import export_item
+
+        d = _resolve_item_dir(args.export_item)
+        if d is None:
+            ui.error(f"item not found: {args.export_item}")
+            return 1
+        try:
+            output = export_item(d, args.format)
+        except (OSError, ValueError, TypeError) as error:
+            ui.error(f"subtitle export failed: {error}")
+            return 1
+        ui.success(f"subtitles written → {output}")
+        return 0
     if args.queue:
         return run_queue(args)
     if args.review_item:
@@ -268,13 +213,25 @@ def run(args: argparse.Namespace) -> int:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(
-        prog="instascript",
+        prog="sonaweft",
         description=(
-            "Reel/audio → local transcript → optional DeepSeek summary + "
-            "factual flags. Fully standalone CLI; Claude Code integration is optional."
+            "Audio/video → timestamped transcript and source-linked notes. Optional AI review; raw ASR preserved."
         ),
     )
-    p.add_argument("input", nargs="?", help="Instagram reel URL or local audio/video file")
+    p.add_argument(
+        "input", nargs="?", help="Instagram reel URL or local audio/video file"
+    )
+    p.add_argument(
+        "--export-item",
+        metavar="SLUG_OR_DIR",
+        help="export an existing transcript to subtitles; no model or API call",
+    )
+    p.add_argument(
+        "--format",
+        choices=("srt", "vtt"),
+        default="srt",
+        help="subtitle export format (default srt)",
+    )
     p.add_argument(
         "--queue",
         default=None,
@@ -291,13 +248,13 @@ def main(argv=None) -> int:
     p.add_argument(
         "--review",
         action="store_true",
-        help="DeepSeek summary + factual flags (needs DEEPSEEK_API_KEY)",
+        help="DeepSeek summary + source-quoted research questions (needs DEEPSEEK_API_KEY)",
     )
     p.add_argument(
         "--review-item",
         default=None,
         metavar="SLUG_OR_DIR",
-        help="DeepSeek summary + factual flags on an ALREADY-extracted item "
+        help="DeepSeek review of an ALREADY-extracted item "
         "(no re-transcription)",
     )
     p.add_argument(
@@ -305,8 +262,19 @@ def main(argv=None) -> int:
         default=str(config.PIPELINE_INBOX),
         help=f"output root (default {config.PIPELINE_INBOX} — vault Inbox)",
     )
+    p.add_argument(
+        "--review-model",
+        choices=("standard", "advanced"),
+        default="standard",
+        help="Optional review: DeepSeek Flash or V4 Pro; separate from the speech model",
+    )
     p.add_argument("--verbose", action="store_true", help="debug logging to stderr")
     a = p.parse_args(argv)
+    if (
+        sum(bool(value) for value in (a.input, a.queue, a.review_item, a.export_item))
+        > 1
+    ):
+        p.error("choose one input mode: source, queue, review-item, or export-item")
 
     logging.basicConfig(
         level=logging.DEBUG if a.verbose else logging.WARNING,

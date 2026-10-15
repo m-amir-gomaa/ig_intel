@@ -17,7 +17,7 @@ export_instainfo_ld_library_path() {
                     dirname "$f"
                     break
                 fi
-            done)
+            done) || true # find can receive SIGPIPE after the first usable match.
         [ -n "$d" ] && found="$found${found:+:}$d"
     done
     export LD_LIBRARY_PATH="$found${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"

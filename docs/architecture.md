@@ -1,212 +1,36 @@
-# instaScript — Architecture
+# Sonaweft architecture
 
-**A single, deterministic, local-first pipeline.** Input is a URL or an audio /
-video file; output is a verbatim, timestamped transcript plus (optionally) an
-AI-written summary and factual-flag list. No agent orchestrates the pipeline at
-runtime — the CLI drives it directly. Everything is standalone.
+```text
+Browser --> secure cookie + CSRF --> FastAPI / Modal
+                                       |--> serialized SQLite ledger writer
+                                       |--> private media volume (48-hour TTL)
+                                       |--> confirmed CPU coordinator
+                                              |--> FFmpeg normalization
+                                              |--> L4 / faster-whisper large-v3
+                                              |--> optional DeepSeek text review
+                                              |--> committed result --> settle hold
+Review player / separate corrections / portable exports <--|
+Explicit selected claim --> Crossref metadata candidates
 
-```
-┌─────────────────────────── Components ───────────────────────────┐
-│                                                                   │
-│  instascript                                                    │
-│   ├── cli.py          orchestration, dedup, exit codes            │
-│   ├── source.py       stage A: resolve URL/file → media+metadata  │
-│   ├── audio.py        stage B: normalize → 16 kHz mono wav        │
-│   ├── transcribe.py   stage C: faster-whisper → transcript JSON   │
-│   ├── summarize.py    stage D (opt): DeepSeek → summary + flags   │
-│   ├── llm.py          provider seam (DeepSeek now, OpenRouter…    │
-│   │                                 reserved for RAG)             │
-│   ├── config.py       env-driven configuration, no hardcoding     │
-│   └── ui.py           terminal rendering (human/scriptable)       │
-│                                                                   │
-│  External tools        yt-dlp · ffmpeg · ffprobe · faster-whisper │
-│  External service      DeepSeek chat API (--review only, opt-in)  │
-└───────────────────────────────────────────────────────────────────┘
+Isolated checkout --> Paddle --> signed durable inbox
+                                 |--> fresh transaction + all adjustment pages
+                                 |--> intent/owner/product-bound credit or revocation
 ```
 
-## System context (UML)
+`instascript/contract.py` validates original ASR and exact source-quoted review and creates versioned exports. `pipeline.py` provides local private checkpoints, exclusive locks, completion hashes and atomic publication. `review.py` bounds text/output, validates JSON and has no autonomous tools. Local `source.py` downloads are never invoked for public uploads.
 
-```mermaid
-flowchart LR
-    U[User / Upwork client] -->|URL or file| CLI[instascript CLI]
-    CLI --> A[source.py]
-    A -->|yt-dlp| YT[Platform CDN / local file]
-    A -->|ffprobe| MD[media + metadata]
-    A --> B[audio.py]
-    B -->|ffmpeg| WAV[audio.wav 16kHz mono]
-    WAV --> H[content_sha256 dedup]
-    B --> C[transcribe.py]
-    C -->|faster-whisper CPU int8| TJ[transcript.json]
-    C --> TT[transcript.txt]
-    TJ --> D[summarize.py]
-    D -->|DeepSeek / opt-in| DS[DeepSeek API]
-    D --> SM[summary.md]
-    D --> FL[flags.md]
-    CLI --> V[(IG_INTEL_VAULT / Inbox)]
-```
+`sonaweft_web/app.py` handles ownership, CSRF, request limits, consent, quotes, revisions, exports and isolated checkout. `media.py` restricts FFmpeg to file/pipe protocols and rejects network-capable playlist formats. `storage.py` validates UUID paths and audio byte ranges. Aggregate activity logs exclude transcripts and filenames.
 
-## Single-ingest sequence
+Ledger confirmation atomically reserves fixed credit and estimated admission allowance before dispatch. Repeated request IDs reserve once. Success consumes the complete quote; failure/cancellation/stale timeout releases it. Cleanup releases work exceeding the 20-minute deadline; a late worker cannot settle a released hold. No automatic paid retry is made.
 
-```mermaid
-sequenceDiagram
-    participant CLI as cli.py
-    participant SRC as source.py
-    participant AUD as audio.py
-    participant TR as transcribe.py
-    participant SUM as summarize.py
-    participant FS as Vault/Inbox
+Signed notification payloads cannot fund accounts alone. Fresh Paddle transaction/adjustment verification checks server-owned intents, owner, product/prices, quantity, currency and environment. Refund revocation is monotonic; queued work is cancelled if necessary and debt blocks new work. Running work may finish with negative available credit while the invariant remains checked. Unknown transactions/products are ignored. Mocks do not establish real delivery or approval.
 
-    CLI->>SRC: resolve(input)
-    alt is URL
-        SRC->>SRC: url_sha256(input) — dedup layer 1
-        SRC->>FS: download via yt-dlp → .download/
-    end
-    SRC-->>CLI: (media, source_meta)
-    CLI->>AUD: normalize(media)
-    AUD-->>CLI: audio.wav
-    CLI->>CLI: content_sha256(audio.wav) — dedup layer 2
-    alt duplicate content
-        CLI-->>FS: discard new item, point at existing
-    else fresh
-        CLI->>FS: write source.json (url + content hashes)
-        CLI->>TR: transcribe(audio.wav)
-        TR-->>FS: transcript.json + transcript.txt
-        opt --review
-            CLI->>SUM: summarize_and_flag()
-            SUM->>DS: DeepSeek chat
-            SUM-->>FS: summary.md + flags.md (hash frontmatter)
-        end
-        CLI-->>User: "saved → Inbox/<slug>/"
-    end
-```
+Separate media/model/ledger volumes isolate state. Hourly cleanup deletes expired files and retains seven daily encrypted financial snapshots with media metadata removed. Session-key rotation invalidates sessions/IP hashes; old keys are needed for old cloud snapshots. Owner-downloaded backups use a separate generated key.
 
-## Module responsibilities
+One speech container/coordinator and bounded uploads, rate limits, trial/admission/storage caps limit initial exposure. Estimated admission caps are not provider-wide hard spending limits. Storage, requests, failed work and schedules can still cost money.
 
-| module | responsibility | depends on |
-|---|---|---|
-| `cli.py` | arg parsing, mode dispatch, dedup, queue mutation, exit codes | all stages |
-| `source.py` | URL normalization + hashing, yt-dlp download, ffprobe metadata, local-file resolution | yt-dlp, ffprobe |
-| `audio.py` | ffmpeg normalization to 16 kHz / mono / s16 PCM | ffmpeg |
-| `transcribe.py` | faster-whisper (int8, CPU) with VAD + word timestamps; writes canonical transcript | faster-whisper |
-| `summarize.py` | DeepSeek summary + factual flags; YAML frontmatter tracing hashes | llm.py |
-| `llm.py` | provider abstraction (`LLMProvider`) — swap without touching stages | requests |
-| `config.py` | all knobs via env; neutral defaults | — |
-| `ui.py` | colored progress/summary rendering; auto-disables off-TTY | — |
+Sonaweft and Pageweft share reviewed owned payment logic and currently an account-scoped Paddle runtime key, with distinct product/prices, notification secret, sessions, ledgers and volumes. They have no sibling runtime imports or shared customer wallet. Key rotation affects both until separate keys are configured.
 
-## Data model
+Future Noteweld imports must validate schema, size, paths, hashes and duplicate identity before one atomic import. Stable segment IDs/provenance preserve the original/corrections/notes distinction. Exporting a manifest does not implement that importer.
 
-### `source.json` — provenance + dedup keys
-
-```json
-{
-  "input": "https://www.instagram.com/reel/DY-iZeGgYjj/?utm_source=...&igsh=...",
-  "kind": "url",
-  "url_sha256": "f7787afc…f65e",
-  "slug": "video-by-justxashton",
-  "title": "Video by justxashton",
-  "source_id": "DY-iZeGgYjj",
-  "uploader": "Ashton Forbes",
-  "duration": 28.587,
-  "downloaded_at": "2026-08-05T12:10:27Z",
-  "orig_format": "m4a",
-  "content_sha256": "d34d499b…4829"
-}
-```
-
-- `url_sha256` — SHA-256 of the link with share-tracking params (`utm_*`,
-  `igsh`, `fbclid`, …) stripped. Same share link, different utm string → same
-  hash → dedup without downloading.
-- `content_sha256` — SHA-256 of the normalized audio's **PCM samples** (the
-  WAV header is skipped — it can vary between ffmpeg builds while the audio is
-  identical). Decoding is deterministic, so the same reel from a different URL
-  or in another format still hashes identically, even across encoders.
-
-### `transcript.json` — canonical ground truth
-
-```json
-{
-  "model": "small",
-  "language": "en",
-  "duration": 28.59,
-  "audio_file": "audio.wav",
-  "segments": [
-    {
-      "id": 0,
-      "start": 0.0,
-      "end": 6.06,
-      "text": "We can convert normal electromagnetic waves into gravitational waves.",
-      "words": [{ "word": "We", "start": 0.0, "end": 0.18 }]
-    }
-  ]
-}
-```
-
-Word-level timestamps feed downstream search, captioning, or RAG. Written once,
-never rewritten (ground-truth invariant).
-
-## Dedup decision flow
-
-```mermaid
-flowchart TD
-    In[input] --> IsURL{URL?}
-    IsURL -- yes --> UH[url_sha256]
-    UH --> UD{in index?}
-    UD -- yes --> Dup[same link — skip]
-    UD -- no --> DL[download]
-    IsURL -- no --> DL
-    DL --> NZ[normalize audio]
-    NZ --> CH[content_sha256]
-    CH --> CD{in index?}
-    CD -- yes --> CDup[same audio — skip]
-    CD -- no --> Fresh[write source.json + transcribe]
-```
-
-The index is rebuilt by scanning every `source.json` under the vault and the
-output root — no central DB, plain files, trivially portable.
-
-## Failure modes & exit codes
-
-| exit | meaning | handling |
-|---|---|---|
-| `0` | success (new transcript, or deduped) | queue line deleted |
-| `1` | item failed (resolve/download/ffmpeg error) | queue line kept for retry; error shown |
-| `2` | usage error (no input, unknown mode) | help message |
-
-- **Review failure** (missing `DEEPSEEK_API_KEY`, API error): warns, keeps the
-  transcript, exits `0` — review is additive, never a blocker. Re-run later with
-  `instascript --review-item <slug>`.
-- **Instagram / logged-in platforms**: yt-dlp retries with browser cookies
-  (`YTDLP_COOKIES_FROM_BROWSER`, comma-separated retry order). Offline sources
-  (YouTube, TikTok, podcast feeds) work anonymously.
-
-## Resolved failure cases
-
-Bugs found during hardening, fixed, and regression-tested:
-
-| failure | root cause | fix |
-|---|---|---|
-| Instagram "empty media response" on every URL ingest | Instagram requires a logged-in session | yt-dlp auto-retries with browser cookies (`YTDLP_COOKIES_FROM_BROWSER`, comma-separated) only when an auth wall is detected — offline platforms stay cookie-free |
-| URL ingest saved a file literally named `filepath` | yt-dlp `--print` template used the bare `filepath` token instead of `%(filepath)s` | corrected template; verified against a live download |
-| `content_sha256` differed between two ffmpeg builds for byte-identical audio | the RIFF/WAV **header** carries build-specific metadata; whole-file hashing picked it up | hash only the PCM samples (stdlib `wave`), so the hash is header-stable and machine-independent |
-| NixOS pip wheels crash with `libstdc++.so.6: cannot open shared object file` | pip wheels link glibc-family libs absent from the loader path | `bin/instascript` detects NixOS and exports the nix lib paths; the nix package links them natively |
-| queue printed `[0/N]` for the first item | used the file line index instead of the item position | enumerate the pending list, not the source file lines |
-
-## Security & privacy boundary
-
-- Transcription is **fully local** — audio never leaves the machine.
-- The only network egress, by design: (a) downloading the source media via
-  yt-dlp, (b) the **opt-in** DeepSeek call in `--review`. No telemetry, no
-  analytics, no phone-home.
-- Dedup hashes are non-reversible SHA-256 — safe to store in markdown
-  frontmatter and source metadata.
-
-## Runtime requirements
-
-| tool | purpose | required for |
-|---|---|---|
-| Python ≥ 3.10 | runtime | all |
-| ffmpeg + ffprobe | normalization + probing | all |
-| yt-dlp | URL download | URLs only |
-| faster-whisper | transcription (CPU int8) | all |
-| DeepSeek API key | summary + flags | `--review` / `--review-item` only |
-| browser login | Instagram and other walled platforms | those platforms only |
+Legacy summarize/LLM adapters, Claude/UTCP examples and vault scaffolding are compatibility/history paths, not the hosted pipeline. Jev is retired. Research metadata matches never certify truth.
